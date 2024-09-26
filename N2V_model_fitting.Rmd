@@ -1,0 +1,183 @@
+```{r}
+source("case_study_function.R")
+load("case_study_data_ORG_conflict.Rda")
+A1<-case_study_data_ORG_conflict$A1
+A2<-case_study_data_ORG_conflict$A2
+```
+
+#This part is to write the network embedding results into csv so that we could use python to generate the network embedding results
+```{r}
+write.csv(A2, "A2.csv", row.names=FALSE)
+write.csv(A2, "A2.csv", row.names=FALSE)
+
+G<-(A1+A2)/2
+write.csv(G, "G.csv", row.names=FALSE)
+
+embeddings<-read.csv("embedding_case_study_G_node2vec.csv")
+```
+
+#the rest of the part is very similar to the normal model fitting procedure
+```{r}
+G<-as.matrix(embeddings)%*%t(as.matrix(embeddings))
+USVT_reg<-USVT.embed(G)
+
+logit.school.data<-case_study_data_ORG_conflict$df
+summary(as.factor(logit.school.data$SCHID))
+x<-as.factor(logit.school.data$SCHID)
+school_coded<-model.matrix(~x-1)
+school_coded<-school_coded[,-1]
+```
+#X.true is the selected covariates
+```{r}
+W<-logit.school.data$WRISTOW2
+DE<-as.numeric(W>1)
+NOMINF<-as.numeric(logit.school.data$NOMINF>0)
+GPA<-logit.school.data$GPA
+gender<-as.numeric(logit.school.data$GENDER)-1
+grade<-as.numeric(logit.school.data$GR)-1
+treat<-as.numeric(logit.school.data$TREAT==2)
+ETHA<-as.numeric(logit.school.data$ETHA)-1
+ETHB<-as.numeric(logit.school.data$ETHB)-1
+ETHW<-as.numeric(logit.school.data$ETHW)-1
+ETHH<-as.numeric(logit.school.data$ETHH)-1
+HOSN<-as.numeric(logit.school.data$HOSN)-1
+Lan<-as.numeric(as.numeric(logit.school.data$HLANG)>1)
+intercept<-matrix(1,nrow = nrow(logit.school.data),ncol = 1)
+X<-cbind(GPA,NOMINF,HOSN,gender,grade,treat,ETHA,ETHB,ETHW,ETHH,Lan,school_coded)
+Y_D<-DE
+X.true <- X
+X.true<-cbind(intercept,X.true)
+```
+#Perform backward elimination for naive logistic reg and SP logistic reg, the 7th column is treatment
+```{r}
+full_model<-logistic.back(X.true,Y_D,0.95,0.05,keep.index =c(7))
+X_Naive<-full_model$X
+
+full_model<-SP.back(X.true,Y_D,G,USVT_reg$Km,0.95,0.05,keep.index =c(7))
+X_SP<-full_model$X
+
+```
+#Our method
+```{r}
+time1<-Sys.time()
+fit<-SP.Inf(X_SP,Y_D,G,K=USVT_reg$Km,thr = 0.95)
+time2<-Sys.time()
+time2-time1
+print(fit$chisq.value)
+```
+#model fitting results for our method
+```{r}
+M<-fit$coef.mat
+row.names(M)<-colnames(X_SP)
+```
+#model fitting results for logistic reg
+```{r}
+NL<- glm(matrix(Y_D,ncol=1)~0+X_Naive,family = "binomial",control = list(maxit = 100))
+estimate<-NL$coefficients
+pvalue<-summary(NL)$coefficients[, 4]
+M_NL<-cbind(estimate,pvalue)
+```
+#model fitting results for RNC
+```{r}
+gamma<-0.05
+X<-X.true[,2:12]
+D <- diag(rowSums(G))
+n<-nrow(G)
+L <- D - G + diag(rep(gamma,n))
+L_gamma<-L+gamma*diag(n)
+eigen_decomp <- eigen(L_gamma, symmetric = TRUE)
+X<-cbind(X,(eigen_decomp$vectors))
+Y<-Y_D
+time1<-Sys.time()
+penalty_factors <- c(rep(0, 11), eigen_decomp$values)
+cv_fit <- cv.glmnet(X, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors, alpha = 0,lambda =  exp(seq(log(1000),log(0.001),length.out=10)))
+optimal_lambda <- cv_fit$lambda.min
+fit <- glmnet(X, Y, family = "binomial", alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda)
+time2<-Sys.time()
+time2-time1
+
+M_RNC<-as.matrix(fit$beta[1:11])
+row.names(M_RNC)<-colnames(X.true[,2:12])
+```
+
+```{r}
+print(M)
+print(M_NL)
+print(M_RNC)
+```
+
+#alpha plot
+```{r}
+n<-nrow(logit.school.data)
+separation_values <- diff(as.numeric(x))
+
+# Print the separation values
+which(separation_values>0)
+fit<-SP.Inf(X_SP,Y_D,G,K=USVT_reg$Km,thr = 0.95)
+plot(fit$alpha,lwd=10^{-10},cex = 0.2,pch = 9, ylim = c(-2,2),col=x, ylab = TeX("$\\alpha$"))
+
+text((which(separation_values>0)[1]+0)/2,-1.5, "Sch1",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[1]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[1]+334)/2,-1.5, "Sch3",cex = 0.5,srt=90)
+abline(v = 331.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[2]+334)/2,-1.5, "Sch10",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[2]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[2]+which(separation_values>0)[3])/2,-1.5, "Sch13",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[3]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[3]+which(separation_values>0)[4])/2,-1.5, "Sch19",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[4]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[4]+which(separation_values>0)[5])/2,-1.5, "Sch20",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[5]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[5]+which(separation_values>0)[6])/2,-1.5, "Sch21",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[6]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[6]+which(separation_values>0)[7])/2,-1.5, "Sch22",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[7]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[7]+which(separation_values>0)[8])/2,-1.5, "Sch24",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[8]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[8]+which(separation_values>0)[9])/2,-1.5, "Sch26",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[9]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[9]+which(separation_values>0)[10])/2,-1.5, "Sch27",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[10]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[10]+which(separation_values>0)[11])/2,-1.5, "Sch29",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[11]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[11]+which(separation_values>0)[12])/2,-1.5, "Sch31",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[12]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[12]+which(separation_values>0)[13])/2,-1.5, "Sch34",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[13]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[13]+which(separation_values>0)[14])/2,-1.5, "Sch35",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[14]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[14]+which(separation_values>0)[15])/2,-1.5, "Sch40",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[15]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[15]+which(separation_values>0)[16])/2,-1.5, "Sch42",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[16]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[16]+which(separation_values>0)[17])/2,-1.5, "Sch44",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[17]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[17]+which(separation_values>0)[18])/2,-1.5, "Sch45",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[18]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[18]+which(separation_values>0)[19])/2,-1.5, "Sch48",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[19]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[19]+which(separation_values>0)[20])/2,-1.5, "Sch49",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[20]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[20]+which(separation_values>0)[21])/2,-1.5, "Sch51",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[21]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[21]+which(separation_values>0)[22])/2,-1.5, "Sch56",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[22]+0.5, col = "gray", lty = "dashed")
+
+text((which(separation_values>0)[22]+which(separation_values>0)[23])/2,-1.5, "Sch58",cex = 0.5,srt=90)
+abline(v = which(separation_values>0)[23]+0.5, col = "gray", lty = "dashed")
+text((which(separation_values>0)[23]+n)/2,-1.5, "Sch60",cex = 0.5,srt=90)
+
+```
+```{r}
+save(X,file="X_embed.Rda")
+save(X_SP,file="X_SP_embed.Rda")
+save(X_true,file="X_true_embed.Rda")
+save(X_Naive,file="X_Naive_embed.Rda")
+save(Y,file="Y.Rda")
+save(Y_D,file="Y.Rda")
+save(G,file="average_network_embed.Rda")
+```
+
+
+
+
