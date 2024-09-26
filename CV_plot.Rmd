@@ -1,0 +1,107 @@
+```{r}
+load("prediction_RNC.Rda")
+load("prediction.Rda")
+load("prediction_NL.Rda")
+load("Y.Rda")
+load("case_study_data_ORG_conflict.Rda")
+source("case_study_function.R")
+A1<-case_study_data_ORG_conflict$A1
+A2<-case_study_data_ORG_conflict$A2
+logit.school.data<-case_study_data_ORG_conflict$df
+summary(as.factor(logit.school.data$SCHID))
+x<-as.factor(logit.school.data$SCHID)
+school_coded<-model.matrix(~x-1)
+school_coded<-school_coded[,-1]
+```
+#The code to generaye Figure 4. We can just analyse this 5 school because the cross validation alaways selects the same 5 schools.  
+```{r}
+index<-which(x %in%c("1",  "22", "27","31","48"))
+true_labels <- Y[index]
+if(sum(true_labels)>0){
+ predicted_probs_method1 <- prediction[index]
+predicted_probs_method2 <- prediction_NL[index]
+predicted_probs_method3 <- prediction_RNC[index]
+roc_curve_method1 <-pROC::roc(response = factor(true_labels), predictor = (predicted_probs_method1), levels = c(0,1),
+ direction='<')
+roc_curve_method2 <- pROC::roc(response = factor(true_labels), predictor = (predicted_probs_method2), levels = c(0,1),
+ direction='<')
+roc_curve_method3 <- pROC::roc(response = factor(true_labels), predictor = (predicted_probs_method3), levels = c(0,1),
+ direction='<')
+plot(roc_curve_method1,col="navy", main ="Schools with Strong Network Effect")
+plot(roc_curve_method2,col="green", add = TRUE)
+plot(roc_curve_method3,col="magenta", add = TRUE)
+legend("bottomright", legend = c("Our Model:0.725", "RNC:0.739", "Logistic Reg:0.701"), col= c("navy","magenta","green"))
+}
+
+roc_curve_method1$auc
+roc_curve_method2$auc
+roc_curve_method3$auc
+
+```
+```{r}
+n<-nrow(prediction_NL)
+index<-c(1:n)
+true_labels <- Y[index]
+if(sum(true_labels)>0){
+ predicted_probs_method1 <- prediction[index]
+predicted_probs_method2 <- prediction_NL[index]
+predicted_probs_method3 <- prediction_RNC[index]
+roc_curve_method1 <-pROC:: roc(response = factor(true_labels), predictor = (predicted_probs_method1), levels = c(0,1),
+ direction='<')
+roc_curve_method2 <-pROC::  roc(response = factor(true_labels), predictor = (predicted_probs_method2), levels = c(0,1),
+ direction='<')
+roc_curve_method3 <- pROC:: roc(response = factor(true_labels), predictor = (predicted_probs_method3), levels = c(0,1),
+ direction='<')
+plot(roc_curve_method1,col="navy", main ="All Schools")
+plot(roc_curve_method2,col="green", add = TRUE)
+plot(roc_curve_method3,col="magenta", add = TRUE)
+legend("bottomright", legend = c("Our Model:0.706", "RNC:0.732", "Logistic Reg:0.701"), col= c("navy","magenta","green"),lty = 1)
+}
+roc_curve_method1$auc
+roc_curve_method2$auc
+roc_curve_method3$auc
+```
+#The code to generate Figure 3
+```{r}
+AUC_SP<-rep(0,25)
+AUC_Naive<-rep(0,25)
+AUC_RNC<-rep(0,25)
+for (i in 1:25) {
+ index<-which(x %in% unique(x)[i])
+true_labels <- Y[index]
+if(sum(true_labels)>0){
+ predicted_probs_method1 <- prediction[index]
+predicted_probs_method2 <- prediction_NL[index]
+predicted_probs_method3 <- prediction_RNC[index]
+roc_curve_method1 <-pROC::roc(response = factor(true_labels), predictor = (predicted_probs_method1), levels = c(0,1),
+ direction='<')
+roc_curve_method2 <- pROC::roc(response = factor(true_labels), predictor = (predicted_probs_method2), levels = c(0,1),
+ direction='<')
+roc_curve_method3 <- pROC::roc(response = factor(true_labels), predictor = (predicted_probs_method3), levels = c(0,1),
+ direction='<')
+
+AUC_SP[i]<-roc_curve_method1$auc
+AUC_Naive[i]<-roc_curve_method2$auc
+AUC_RNC[i]<-roc_curve_method3$auc}
+}
+colour=rep("black",25)
+points_to_label <- c(1, 8,11,13,20) 
+name<-c("Sch1","Sch3","Sch10","Sch13","Sch19","Sch20","Sch21","Sch22","Sch24","Sch26","Sch27","Sch29","Sch31","Sch34","Sch35","Sch40","Sch42","Sch44","Sch45" ,"Sch48", "Sch49", "Sch51","Sch56","Sch58", "Sch60")
+# Create scatter plot
+colour[points_to_label]<-"red"
+plot(AUC_SP, AUC_Naive,  xlab = "AUC: Our Model", ylab = "AUC: Logistic Reg",cex=0.5,col=colour, pch = 19,xlim = c(0.4,0.9),ylim = c(0.4,0.9))
+# Example: points 2 and 4
+
+# Add labeled points for the selected points
+text(AUC_SP[points_to_label], AUC_Naive[points_to_label], labels = name[points_to_label], pos = 4,cex=0.7) 
+# Add y=x line
+abline(a = 0, b = 1, col = "red")
+
+# Create scatter plot
+plot(AUC_SP, AUC_RNC, xlab = "AUC: Our Model", ylab = "AUC: RNC",cex=0.5,col=colour, pch = 19,xlim = c(0.4,0.9),ylim = c(0.4,0.9))
+text(AUC_SP[points_to_label], AUC_RNC[points_to_label], labels = name[points_to_label], pos = 4,cex=0.7) 
+# Add y=x line
+abline(a = 0, b = 1, col = "red")
+```
+
+
