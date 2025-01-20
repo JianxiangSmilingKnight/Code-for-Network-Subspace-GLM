@@ -58,10 +58,10 @@ for (i in c(1:B)) {
     Y <- rbinom(n,1,EY)
     Xtmp<-cbind(X.true,(eigen_decomp$vectors))
     penalty_factors <- c(rep(0, 2), eigen_decomp$values)
-    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors,lambda = seq(2,1,length.out=10), alpha = 0)
+    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",intercept = FALSE, standardize=FALSE,nfolds = 10, penalty.factor = penalty_factors,lambda = seq(2,1,length.out=10), alpha = 0)
     optimal_lambda_perm <- cv_fit_perm$lambda.min
-    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
-    fitted_value<-exp(Xtmp%*%fit_perm$beta)
+    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, standardize=FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
+    fitted_value<-exp(Xtmp%*%fit_perm$beta)/(1+exp(Xtmp%*%fit_perm$beta))
     SPE<-as.matrix(t(fitted_value-EY)%*%(fitted_value-EY)/n)
     c(SPE)
   }
@@ -100,10 +100,10 @@ for (i in c(1:B)) {
     Y <- rbinom(n,1,EY)
     Xtmp<-cbind(X.true,eigen_decomp$vectors)
     penalty_factors <- c(rep(0, 2), eigen_decomp$values)
-    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
+    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10,intercept = FALSE, standardize=FALSE, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
     optimal_lambda_perm <- cv_fit_perm$lambda.min
-    fit_perm <- glmnet(Xtmp, Y,  family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
-    fitted_value<-exp(Xtmp%*%fit_perm$beta)
+    fit_perm <- glmnet(Xtmp, Y,  family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, standardize=FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
+    fitted_value<-exp(Xtmp%*%fit_perm$beta)/(1+exp(Xtmp%*%fit_perm$beta))
     SPE<-as.matrix(t(fitted_value-EY)%*%(fitted_value-EY)/n)
     c(SPE)
   }
@@ -143,10 +143,10 @@ for (i in c(1:B)) {
     Y <- rbinom(n,1,EY)
     Xtmp<-cbind(X.true,(eigen_decomp$vectors))
     penalty_factors <- c(rep(0, 2), eigen_decomp$values)
-    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
+    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10,intercept = FALSE, standardize=FALSE, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
     optimal_lambda_perm <- cv_fit_perm$lambda.min
-    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
-    fitted_value<-exp(Xtmp%*%fit_perm$beta)
+    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, standardize=FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
+    fitted_value<-exp(Xtmp%*%fit_perm$beta)/(1+exp(Xtmp%*%fit_perm$beta))
     SPE<-as.matrix(t(fitted_value-EY)%*%(fitted_value-EY)/n)
     c(SPE)
   }
@@ -195,10 +195,10 @@ for (i in c(1:B)) {
     Y <- rbinom(n,1,EY)
     Xtmp<-cbind(X.true,(eigen_decomp$vectors))
     penalty_factors <- c(rep(0, 2), eigen_decomp$values)
-    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors,lambda = seq(2,1,length.out=10), alpha = 0)
+    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10,intercept = FALSE, standardize=FALSE, penalty.factor = penalty_factors,lambda = seq(2,1,length.out=10), alpha = 0)
     optimal_lambda_perm <- cv_fit_perm$lambda.min
-    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
-    fitted_value<-exp(Xtmp%*%fit_perm$beta)
+    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, standardize=FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
+    fitted_value<-exp(Xtmp%*%fit_perm$beta)/(1+exp(Xtmp%*%fit_perm$beta))
     SPE<-as.matrix(t(fitted_value-EY)%*%(fitted_value-EY)/n)
     c(SPE)
   }
@@ -237,10 +237,10 @@ for (i in c(1:B)) {
     Y <- rbinom(n,1,EY)
     Xtmp<-cbind(X.true,eigen_decomp$vectors)
     penalty_factors <- c(rep(0, 2), eigen_decomp$values)
-    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
+    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10,intercept = FALSE, standardize=FALSE, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
     optimal_lambda_perm <- cv_fit_perm$lambda.min
-    fit_perm <- glmnet(Xtmp, Y,  family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
-    fitted_value<-exp(Xtmp%*%fit_perm$beta)
+    fit_perm <- glmnet(Xtmp, Y,  family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, standardize=FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
+    fitted_value<-exp(Xtmp%*%fit_perm$beta)/(1+exp(Xtmp%*%fit_perm$beta))
     SPE<-as.matrix(t(fitted_value-EY)%*%(fitted_value-EY)/n)
     c(SPE)
   }
@@ -280,10 +280,10 @@ for (i in c(1:B)) {
     Y <- rbinom(n,1,EY)
     Xtmp<-cbind(X.true,(eigen_decomp$vectors))
     penalty_factors <- c(rep(0, 2), eigen_decomp$values)
-    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
+    cv_fit_perm <- cv.glmnet(Xtmp, Y, family = "binomial",nfolds = 10,intercept = FALSE, standardize=FALSE, penalty.factor = penalty_factors, alpha = 0,lambda = seq(2,1,length.out=10))
     optimal_lambda_perm <- cv_fit_perm$lambda.min
-    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
-    fitted_value<-exp(Xtmp%*%fit_perm$beta)
+    fit_perm <- glmnet(Xtmp, Y, family = "binomial",thresh = 1e-03, alpha = 0,intercept = FALSE, standardize=FALSE, penalty.factor =penalty_factors,lambda = optimal_lambda_perm)
+    fitted_value<-exp(Xtmp%*%fit_perm$beta)/(1+exp(Xtmp%*%fit_perm$beta))
     SPE<-as.matrix(t(fitted_value-EY)%*%(fitted_value-EY)/n)
     c(SPE)
   }
