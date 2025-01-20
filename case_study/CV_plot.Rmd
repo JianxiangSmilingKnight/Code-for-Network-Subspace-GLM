@@ -3,6 +3,8 @@ load("prediction_RNC.Rda")
 load("prediction.Rda")
 load("prediction_NL.Rda")
 load("Y.Rda")
+load("cv_order.Rda")
+load("school_choice.Rda")
 load("case_study_data_ORG_conflict.Rda")
 source("case_study_function.R")
 A1<-case_study_data_ORG_conflict$A1
@@ -14,6 +16,8 @@ school_coded<-model.matrix(~x-1)
 school_coded<-school_coded[,-1]
 ```
 ```{r}
+n<-nrow(Y)
+h<-200
 tmp<-rep(0,n)
 for (i in 1:n) {
   tmp[i]<-x[i]
@@ -44,7 +48,7 @@ roc_curve_method3 <- pROC::roc(response = factor(true_labels), predictor = (pred
 plot(roc_curve_method1,col="navy", main ="Schools with Strong Network Effect")
 plot(roc_curve_method2,col="green", add = TRUE)
 plot(roc_curve_method3,col="magenta", add = TRUE)
-legend("bottomright", legend = c("Our Model:0.715", "RNC:0.736", "Logistic Reg:0.696"), col= c("navy","magenta","green"))
+legend("bottomright", legend = c("Our Model:0.711", "RNC:0.694", "Logistic Reg:0.696"), col= c("navy","magenta","green"))
 }
 
 roc_curve_method1$auc
@@ -71,7 +75,7 @@ roc_curve_method3 <- pROC::roc(response = factor(true_labels), predictor = (pred
 plot(roc_curve_method1,col="navy", main ="Schools with Strong Network Effect")
 plot(roc_curve_method2,col="green", add = TRUE)
 plot(roc_curve_method3,col="magenta", add = TRUE)
-legend("bottomright", legend = c("Our Model:0.725", "RNC:0.739", "Logistic Reg:0.701"), col= c("navy","magenta","green"))
+legend("bottomright", legend = c("Our Model:0.722", "RNC:0.704", "Logistic Reg:0.710"), col= c("navy","magenta","green"))
 }
 
 roc_curve_method1$auc
@@ -96,7 +100,7 @@ roc_curve_method3 <- pROC:: roc(response = factor(true_labels), predictor = (pre
 plot(roc_curve_method1,col="navy", main ="All Schools")
 plot(roc_curve_method2,col="green", add = TRUE)
 plot(roc_curve_method3,col="magenta", add = TRUE)
-legend("bottomright", legend = c("Our Model:0.706", "RNC:0.732", "Logistic Reg:0.701"), col= c("navy","magenta","green"),lty = 1)
+legend("bottomright", legend = c("Our Model:0.706", "RNC:0.733", "Logistic Reg:0.701"), col= c("navy","magenta","green"),lty = 1)
 }
 roc_curve_method1$auc
 roc_curve_method2$auc
